@@ -120,3 +120,43 @@ export function assessSwimming(marine: any, weather: any): ActivityAssessment {
         : ['yüzmek için uygun, keyifli günler'],
   }
 }
+
+export async function getAiAdvice(
+  location: string,
+  startDate: string,
+  endDate: string,
+  activities: string[],
+  weatherData: any
+) {
+  const res = await fetch('http://localhost:3001/api/advice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ location, startDate, endDate, activities, weatherData }),
+  })
+
+  if (!res.ok) {
+    throw new Error('Tavsiye alınamadı')
+  }
+
+  return res.json()
+}
+
+export function getCampStats(weather: any) {
+  const rainProb = weather.daily.precipitation_probability_max[0] ?? 0
+  const windSpeed = weather.daily.windspeed_10m_max[0] ?? 0
+  return [
+    { label: `%${Math.round(rainProb)} yağış` },
+    { label: rainProb > 30 ? 'ıslak zemin' : 'kuru zemin' },
+    { label: `${Math.round(windSpeed)} km/sa` },
+  ]
+}
+
+export function getSwimStats(marine: any, weather: any) {
+  const waveHeight = marine?.daily?.wave_height_max?.[0] ?? 0
+  const waterTemp = weather.daily.temperature_2m_min[0] ?? 20
+  return [
+    { label: `${waveHeight.toFixed(1)}m` },
+    { label: `${Math.round(waterTemp)}°C` },
+    { label: waveHeight > 1.2 ? 'risk yüksek' : waveHeight > 0.6 ? 'orta risk' : 'düşük risk' },
+  ]
+}

@@ -5,7 +5,7 @@ import {
   Thermometer, Lightbulb, ChevronRight, Clock,
   Footprints, Bike, ShieldAlert, TriangleAlert
 } from 'lucide-react'
-import { geocodeLocation, fetchWeather, assessCamping, assessSwimming, type ActivityAssessment } from './weather'
+import { geocodeLocation, fetchWeather, getAiAdvice, getCampStats, getSwimStats } from './weather'
 
 function SwimmerIcon({ className, size = 24 }: { className?: string; size?: number }) {
   return (
@@ -75,6 +75,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [weatherData, setWeatherData] = useState<any>(null)
   const [resolvedLocationName, setResolvedLocationName] = useState('')
+  const [aiAdvice, setAiAdvice] = useState<any>(null)
 
   const startDateRef = useRef<HTMLInputElement>(null)
   const endDateRef = useRef<HTMLInputElement>(null)
@@ -94,6 +95,10 @@ function App() {
       setResolvedLocationName(loc.name)
       const data = await fetchWeather(loc.latitude, loc.longitude, startDate, endDate)
       setWeatherData(data)
+
+      const advice = await getAiAdvice(location, startDate, endDate, selectedActivities, data)
+      setAiAdvice(advice)
+
       setShowResults(true)
     } catch (err) {
       console.error(err)
@@ -103,17 +108,15 @@ function App() {
     }
   }
 
-  const campAssessment: ActivityAssessment | null =
-    weatherData && selectedActivities.includes('kamp')
-      ? assessCamping(weatherData.weather)
-      : null
+  const campAssessment = aiAdvice?.activities?.kamp && selectedActivities.includes('kamp')
+    ? { ...aiAdvice.activities.kamp, stats: getCampStats(weatherData.weather) }
+    : null
 
-  const swimAssessment: ActivityAssessment | null =
-    weatherData && selectedActivities.includes('yuzme')
-      ? assessSwimming(weatherData.marine, weatherData.weather)
-      : null
+  const swimAssessment = aiAdvice?.activities?.yuzme && selectedActivities.includes('yuzme')
+    ? { ...aiAdvice.activities.yuzme, stats: getSwimStats(weatherData.marine, weatherData.weather) }
+    : null
 
-  const assessments = [campAssessment, swimAssessment].filter(Boolean) as ActivityAssessment[]
+  const assessments = [campAssessment, swimAssessment].filter(Boolean)
   const overallBad = assessments.some((a) => a.status === 'bad')
   const overallWarning = !overallBad && assessments.some((a) => a.status === 'warning')
   const overallStatus = overallBad ? 'bad' : overallWarning ? 'warning' : 'good'
@@ -437,20 +440,24 @@ function App() {
             </div>
 
             {/* Saat Aralığı - hâlâ statik, sonraki adımda gerçek veriye bağlanacak */}
-            <div className="bg-card border border-border rounded-2xl p-4 mt-3">
-              <p className="text-heading font-semibold flex items-center gap-2 mb-3">
-                <Clock size={18} /> En Uygun Saat Aralığı
-              </p>
-              <div
-                className="h-2 rounded-full mb-2"
-                style={{ background: 'linear-gradient(to right, #F04D43, #F3BE1A, #83BF3D, #F3BE1A, #F04D43)' }}
-              />
-              <div className="flex justify-between text-xs text-muted mb-3">
-                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+            {aiAdvice?.bestTimeWindow && (
+              <div className="bg-card border border-border rounded-2xl p-4 mt-3">
+                <p className="text-heading font-semibold flex items-center gap-2 mb-3">
+                  <Clock size={18} /> En Uygun Saat Aralığı
+                </p>
+                <div
+                  className="h-2 rounded-full mb-2"
+                  style={{ background: 'linear-gradient(to right, #F04D43, #F3BE1A, #83BF3D, #F3BE1A, #F04D43)' }}
+                />
+                <div className="flex justify-between text-xs text-muted mb-3">
+                  <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+                </div>
+                <span className="bg-good text-bg text-xs font-medium px-3 py-1 rounded-full">
+                  {aiAdvice.bestTimeWindow.start}-{aiAdvice.bestTimeWindow.end}
+                </span>
+                <p className="text-body text-xs mt-2">{aiAdvice.bestTimeWindow.reason}</p>
               </div>
-              <span className="bg-good text-bg text-xs font-medium px-3 py-1 rounded-full">06:30-10:00</span>
-              <p className="text-muted text-xs mt-2">*bu bölüm henüz saatlik gerçek veriye bağlanmadı</p>
-            </div>
+            )}
           </>
         )}
 
