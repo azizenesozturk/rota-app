@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #090F15;
+  --color-card: #111A24;
+  --color-border: #32404B;
+  --color-divider: #3A4652;
+  --color-heading: #F4F5F7;
+  --color-body: #C9D0D6;
+  --color-muted: #9AA6B2;
+  --color-warning: #F3BE1A;
+  --color-bad: #F04D43;
+  --color-good: #83BF3D;
+  --color-accent: #EF5947;
+  --color-brand: #7BA7AF;
+}
+
+input[type="date"] {
+  color-scheme: dark;
+}
