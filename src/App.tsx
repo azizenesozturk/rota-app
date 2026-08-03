@@ -3,9 +3,11 @@ import {
   ArrowLeft, Share, MountainSnow, MapPin, CalendarDays, Tent,
   CircleAlert, CloudRain, Wind, ChevronDown, XCircle,
   Thermometer, Lightbulb, ChevronRight, Clock,
-  Footprints, Bike, ShieldAlert, TriangleAlert, Bot, X
+  Footprints, Bike, ShieldAlert, TriangleAlert, Bot, X, Compass
 } from 'lucide-react'
 import { geocodeLocation, fetchWeather, getAiAdvice, getCampStats, getSwimStats, getGenericStats, findNearbyPlaces } from './weather'
+import Calendar from './Calendar'
+
 
 function SwimmerIcon({ className, size = 24 }: { className?: string; size?: number }) {
   return (
@@ -35,10 +37,11 @@ const ACTIVITIES = [
   { id: 'yuruyus', label: 'Yürüyüş', icon: Footprints },
   { id: 'tirmanis', label: 'Dağ Tırmanma', icon: MountainSnow },
   { id: 'bisiklet', label: 'Bisiklet Sürmek', icon: Bike },
+  { id: 'gezi', label: 'Gezi', icon: Compass },
 ]
 
 const ACTIVITY_LABELS: Record<string, string> = {
-  kamp: 'kamp', yuzme: 'yüzme', yuruyus: 'yürüyüş', tirmanis: 'dağ tırmanma', bisiklet: 'bisiklet',
+  kamp: 'kamp', yuzme: 'yüzme', yuruyus: 'yürüyüş', tirmanis: 'dağ tırmanma', bisiklet: 'bisiklet', gezi: 'gezi',
 }
 
 const STAT_ICONS: Record<string, any> = {
@@ -93,10 +96,11 @@ function dailyVerdict(rainProb: number, waveHeight: number | null) {
 }
 
 function App() {
-  const [location, setLocation] = useState('Burnaz Plajı, Hatay')
+  const todayForInput = new Date().toISOString().slice(0, 10)
+  const [location, setLocation] = useState('')
   const [startDate, setStartDate] = useState('2026-08-05')
   const [endDate, setEndDate] = useState('2026-08-11')
-  const [selectedActivities, setSelectedActivities] = useState<string[]>(['kamp', 'yuzme'])
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([])
   const [showActivityMenu, setShowActivityMenu] = useState(false)
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
   const locationInputRef = useRef<HTMLInputElement>(null)
@@ -104,6 +108,7 @@ function App() {
   const [loadingNearby, setLoadingNearby] = useState(false)
   const [showNearby, setShowNearby] = useState(false)
   const [showDateDetail, setShowDateDetail] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
 
   const [showResults, setShowResults] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -114,8 +119,7 @@ function App() {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0)
   const dailyScrollRef = useRef<HTMLDivElement>(null)
 
-  const startDateRef = useRef<HTMLInputElement>(null)
-  const endDateRef = useRef<HTMLInputElement>(null)
+  
 
   const toggleActivity = (id: string) => {
     setSelectedActivities((prev) =>
@@ -135,6 +139,12 @@ function App() {
     setError(null)
     setShowResults(false)
     try {
+      const rangeDays = Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1
+      if (rangeDays > 16) {
+        setError('En fazla 16 günlük bir tarih aralığı seçebilirsiniz, lütfen aralığı kısaltın.')
+        setLoading(false)
+        return
+      }
       const loc = await geocodeLocation(location)
       setResolvedLocationName(loc.name)
 
@@ -147,10 +157,20 @@ function App() {
       const todayPlus6 = new Date(today)
       todayPlus6.setDate(todayPlus6.getDate() + 6)
       const e = new Date(endDate)
-      const fetchEnd = e > todayPlus6 ? e : todayPlus6
+      let fetchEnd = e > todayPlus6 ? e : todayPlus6
+
+      // Open-Meteo en fazla 16 günlük tahmin veriyor
+      const maxEnd = new Date(today)
+      maxEnd.setDate(maxEnd.getDate() + 15)
+      if (fetchEnd > maxEnd) fetchEnd = maxEnd
+
       const fetchEndStr = fetchEnd.toISOString().slice(0, 10)
 
       const data = await fetchWeather(loc.latitude, loc.longitude, fetchStart, fetchEndStr)
+
+      if (data.weather?.error) {
+        throw new Error('Hava verisi alınamadı, tarih aralığını kısaltmayı deneyin.')
+      }
       setWeatherData(data)
       console.log('Çekilen gün sayısı:', data.weather.daily.time.length, data.weather.daily.time)
 
@@ -158,9 +178,15 @@ function App() {
       setAiAdvice(advice)
 
       setShowResults(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      setError('Konum bulunamadı veya veri çekilemedi. Farklı bir yer adı deneyin.')
+      if (err.message === 'Konum bulunamadı') {
+        setError('Bu konum bulunamadı. Daha genel bir isim deneyin (örn: şehir adı).')
+      } else if (err.message?.includes('Tavsiye alınamadı')) {
+        setError('Şu anda tavsiye üretilemiyor, yapay zeka servisi yoğun olabilir. Birazdan tekrar deneyin.')
+      } else {
+        setError('Bir şeyler ters gitti. Lütfen tekrar deneyin.')
+      }
     } finally {
       setLoading(false)
     }
@@ -253,17 +279,15 @@ const genericAssessments = weatherData
   const statusColor: Record<string, string> = { bad: 'text-bad', warning: 'text-warning', good: 'text-good' }
 
   return (
-    <div className="min-h-screen bg-bg p-4">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-bg p-4 overflow-x-hidden">
+      <div className="max-w-md mx-auto break-words">
 
         {/* Üst Bar */}
-        <div className="flex items-center justify-between mb-1">
-          <ArrowLeft className="text-heading" size={22} />
+        <div className="flex items-center justify-center mb-1">
           <span className="text-brand text-2xl font-bold flex items-center gap-2">
             <img src="/logo.png" alt="DenDen" className="w-10 h-10" />
             DenDen
           </span>
-          <Share className="text-heading" size={20} />
         </div>
         <p className="text-muted text-xs text-center mb-4">
           gideceğin yer için akıllı hava ve rota tavsiyesi
@@ -271,8 +295,8 @@ const genericAssessments = weatherData
 
         {/* Konum, Tarih ve Aktivite Girişi */}
         <div className="bg-card border border-border rounded-2xl p-4 mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 flex-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 flex-1 w-full">
               <MapPin className="text-heading flex-shrink-0" size={28} />
               <input
                 ref={locationInputRef}
@@ -284,41 +308,37 @@ const genericAssessments = weatherData
               />
             </div>
 
-            <div className="w-px h-10 bg-divider mx-3" />
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full">
               <CalendarDays className="text-heading flex-shrink-0" size={28} />
               <div>
-                <div className="flex items-center gap-1">
+                <div className="relative">
                   <button
                     type="button"
-                    onClick={() => startDateRef.current?.showPicker()}
-                    className="text-heading text-sm font-medium py-2 px-1"
+                    onClick={() => setShowCalendar((v) => !v)}
+                    className="flex items-center gap-1"
                   >
-                    {shortDate(startDate)}
+                    <span className="text-heading text-sm font-medium py-2 px-1">
+                      {shortDate(startDate)}
+                    </span>
+                    <span className="text-muted text-sm">–</span>
+                    <span className="text-heading text-sm font-medium py-2 px-1">
+                      {shortDate(endDate)}
+                    </span>
                   </button>
-                  <input
-                    ref={startDateRef}
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-0 h-0 opacity-0 absolute"
-                  />
-                  <span className="text-muted text-sm">–</span>
-                  <button
-                    type="button"
-                    onClick={() => endDateRef.current?.showPicker()}
-                    className="text-heading text-sm font-medium py-2 px-1"
-                  >
-                    {shortDate(endDate)}
-                  </button>
-                  <input
-                    ref={endDateRef}
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-0 h-0 opacity-0 absolute"
-                  />
+
+                  {showCalendar && (
+                    <div className="absolute z-20 top-full right-0 mt-2 w-72">
+                      <Calendar
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                          setStartDate(s)
+                          setEndDate(e)
+                        }}
+                        onClose={() => setShowCalendar(false)}
+                      />
+                    </div>
+                  )}
                 </div>
                 <p className="text-muted text-xs mt-1">{dayCount(startDate, endDate)} gün</p>
               </div>

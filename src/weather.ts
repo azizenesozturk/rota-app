@@ -128,7 +128,7 @@ export async function getAiAdvice(
   activities: string[],
   weatherData: any
 ) {
-  const res = await fetch('http://localhost:3001/api/advice', {
+  const res = await fetch('/api/advice', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ location, startDate, endDate, activities, weatherData }),

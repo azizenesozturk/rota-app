@@ -1,20 +1,14 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-dotenv.config()
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Sadece POST kabul edilir' })
+  }
 
-const app = express()
-app.use(cors())
-app.use(express.json())
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-app.post('/api/advice', async (req, res) => {
   try {
     const { location, startDate, endDate, activities, weatherData } = req.body
 
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
     const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' })
 
     const prompt = `
@@ -110,14 +104,6 @@ SADECE şu JSON formatında yanıt ver, başka hiçbir metin ekleme:
 
     const result = await model.generateContent(prompt)
     const text = result.response.text()
-    console.log('--- HAM AI YANITI ---')
-    console.log(text)
-
-    console.log('--- HAM AI YANITI ---')
-    console.log(text)
-    console.log('--- SON ---')
-
-    // Gemini bazen ```json ile sarmalayabilir, temizleyelim
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const parsed = JSON.parse(cleaned)
 
@@ -130,8 +116,4 @@ SADECE şu JSON formatında yanıt ver, başka hiçbir metin ekleme:
       res.status(500).json({ error: 'Tavsiye üretilemedi' })
     }
   }
-})
-
-app.listen(3001, () => {
-  console.log('Sunucu çalışıyor: http://localhost:3001')
-})
+}
