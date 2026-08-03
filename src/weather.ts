@@ -219,15 +219,14 @@ export function getGenericStats(weather: any) {
   ]
 }
 
-export async function findNearbyPlaces(currentLat: number, currentLon: number, _region: string) {
-  // Yaklaşık 60km'lik bir kutu oluştur (enlem/boylam derecesi ~111km)
+export async function findNearbyPlaces(currentLat: number, currentLon: number, _region: string, searchTerm: string = 'plaj') {
   const delta = 0.55
   const minLon = currentLon - delta
   const maxLon = currentLon + delta
   const minLat = currentLat - delta
   const maxLat = currentLat + delta
 
-  const url = `https://nominatim.openstreetmap.org/search?q=plaj&format=json&limit=10&accept-language=tr&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1`
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchTerm)}&format=json&limit=10&accept-language=tr&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1`
 
   console.log('Arama URL:', url)
   const res = await fetch(url)

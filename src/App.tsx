@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   ArrowLeft, Share, MountainSnow, MapPin, CalendarDays, Tent,
   CircleAlert, CloudRain, Wind, ChevronDown, XCircle,
@@ -109,6 +109,9 @@ function App() {
   const [showNearby, setShowNearby] = useState(false)
   const [showDateDetail, setShowDateDetail] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const calendarWrapperRef = useRef<HTMLDivElement>(null)
+  const activityMenuRef = useRef<HTMLDivElement>(null)
+  
 
   const [showResults, setShowResults] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -119,7 +122,29 @@ function App() {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0)
   const dailyScrollRef = useRef<HTMLDivElement>(null)
 
-  
+  useEffect(() => {
+  function handleClickOutside(e: MouseEvent) {
+    if (calendarWrapperRef.current && !calendarWrapperRef.current.contains(e.target as Node)) {
+      setShowCalendar(false)
+    }
+  }
+  if (showCalendar) {
+    document.addEventListener('mousedown', handleClickOutside)
+  }
+  return () => document.removeEventListener('mousedown', handleClickOutside)
+}, [showCalendar])
+
+useEffect(() => {
+  function handleClickOutside(e: MouseEvent) {
+    if (activityMenuRef.current && !activityMenuRef.current.contains(e.target as Node)) {
+      setShowActivityMenu(false)
+    }
+  }
+  if (showActivityMenu) {
+    document.addEventListener('mousedown', handleClickOutside)
+  }
+  return () => document.removeEventListener('mousedown', handleClickOutside)
+}, [showActivityMenu])
 
   const toggleActivity = (id: string) => {
     setSelectedActivities((prev) =>
@@ -199,7 +224,18 @@ function App() {
       const loc = await geocodeLocation(location)
       const parts = loc.name.split(',').map((p: string) => p.trim())
       const region = parts.slice(-3, -1).join(', ')
-      const places = await findNearbyPlaces(loc.latitude, loc.longitude, region)
+      const searchTerm = selectedActivities.includes('kamp') || selectedActivities.includes('yuzme')
+        ? 'plaj'
+        : selectedActivities.includes('tirmanis')
+        ? 'tepe'
+        : selectedActivities.includes('yuruyus')
+        ? 'orman'
+        : selectedActivities.includes('gezi')
+        ? 'müze'
+        : selectedActivities.includes('bisiklet')
+        ? 'park'
+        : 'plaj'
+      const places = await findNearbyPlaces(loc.latitude, loc.longitude, region, searchTerm)
 
       const placesWithWeather = await Promise.all(
         places.map(async (p: any) => {
@@ -311,7 +347,7 @@ const genericAssessments = weatherData
             <div className="flex items-center gap-2 w-full">
               <CalendarDays className="text-heading flex-shrink-0" size={28} />
               <div>
-                <div className="relative">
+                <div className="relative" ref={calendarWrapperRef}>
                   <button
                     type="button"
                     onClick={() => setShowCalendar((v) => !v)}
@@ -327,8 +363,11 @@ const genericAssessments = weatherData
                   </button>
 
                   {showCalendar && (
-                    <div className="absolute z-20 top-full right-0 mt-2 w-72">
-                      <Calendar
+  <div
+    className="absolute z-30 top-full left-1/2 mt-3 max-w-[calc(100vw-2rem)]"
+    style={{ transform: 'translateX(-20%)' }}
+  >
+    <Calendar
                         startDate={startDate}
                         endDate={endDate}
                         onChange={(s, e) => {
@@ -345,7 +384,7 @@ const genericAssessments = weatherData
             </div>
           </div>
 
-          <div className="border-t border-divider pt-3 relative">
+          <div className="border-t border-divider pt-3 relative" ref={activityMenuRef}>
             <p className="text-muted text-xs mb-2">Aktiviteler</p>
             <div className="flex gap-2 flex-wrap items-center">
               {selectedActivities.map((id) => {

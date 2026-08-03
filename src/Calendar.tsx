@@ -32,7 +32,7 @@ export default function Calendar({
   const month = viewDate.getMonth()
 
   const firstDay = new Date(year, month, 1)
-  const startWeekday = (firstDay.getDay() + 6) % 7 // Pazartesi=0 olacak şekilde
+  const startWeekday = (firstDay.getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   const cells: (Date | null)[] = []
@@ -48,7 +48,6 @@ export default function Calendar({
       setSelecting('end')
     } else {
       if (dateStr < startDate) {
-        // Bitiş olarak başlangıçtan önceki bir gün seçildiyse, yeni başlangıç yap
         onChange(dateStr, dateStr)
       } else {
         onChange(startDate, dateStr)
@@ -57,25 +56,29 @@ export default function Calendar({
       }
     }
   }
+
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-lg">
+    <div
+      className="bg-bg border border-border rounded-2xl p-3"
+      style={{ width: '300px', boxShadow: '0 10px 40px rgba(0,0,0,0.6)' }}
+    >
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="text-heading p-1">
+        <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="text-heading p-1 flex-shrink-0">
           <ChevronLeft size={18} />
         </button>
-        <span className="text-heading text-sm font-semibold">{MONTHS[month]} {year}</span>
-        <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="text-heading p-1">
+        <span className="text-heading text-sm font-semibold whitespace-nowrap">{MONTHS[month]} {year}</span>
+        <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="text-heading p-1 flex-shrink-0">
           <ChevronRight size={18} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 mb-1" style={{ gap: '2px' }}>
         {DAYS.map((d) => (
-          <div key={d} className="text-muted text-[10px] text-center py-1">{d}</div>
+          <div key={d} className="text-muted text-[10px] text-center py-1 whitespace-nowrap">{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7" style={{ gap: '2px' }}>
         {cells.map((d, i) => {
           if (!d) return <div key={i} />
           const dateStr = toDateStr(d)
@@ -89,14 +92,14 @@ export default function Calendar({
               key={i}
               onClick={() => handleDayClick(d)}
               disabled={isPast}
-              className={`text-xs h-8 rounded-lg flex items-center justify-center transition-colors ${
+              className={`text-xs h-9 rounded-lg flex items-center justify-center transition-colors ${
                 isPast
                   ? 'text-muted opacity-30 cursor-not-allowed'
                   : isStart || isEnd
                   ? 'bg-good text-bg font-semibold'
                   : inRange
                   ? 'bg-good/20 text-heading'
-                  : 'text-body hover:bg-bg'
+                  : 'text-body hover:bg-card'
               }`}
             >
               {d.getDate()}
