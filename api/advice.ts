@@ -55,6 +55,8 @@ KRİTİK KURAL: Her "lines" elemanı EN FAZLA 12 karakter olmalı. "Maksimum", "
 
 "tips" alanı kart üzerinde HER ZAMAN görünen en kritik 2 öneri olsun, her biri 6-10 kelime, spesifik ve aksiyona dönük olsun (örn "Gölgede, iyi havalandırılan bir alana çadır kurun" gibi — sadece "Gölge alan seç" gibi 2 kelimelik olmasın).
 
+Birbirine yakın aktiviteler (örn yürüyüş ve gezi, ya da kamp ve bisiklet) için öneriler birbirinin neredeyse aynısı OLMAMALI. Her aktivitenin kendine özgü doğasına göre farklılaştır: yürüyüş için ayakkabı/adım temposu/rota zorluğu gibi fiziksel efor konularına, gezi için ulaşım/görülecek yer/mola planlaması gibi konulara, kamp için ekipman/zemin/gölge konularına, bisiklet için lastik/güzergah/trafik konularına odaklan. Aynı gün için bile olsa, aktiviteye özgü bu farkı MUTLAKA yansıt.
+
 "detailedTips" alanı "tüm hazırlık listesi" açılınca görünecek EK 3-4 öneri olsun, "tips" ile TEKRARLAMASIN, farklı ve tamamlayıcı bilgiler versin (malzeme önerileri, zamanlama önerileri, güvenlik önerileri gibi çeşitli açılardan).
 
 "summary" alanı SADECE genel bir tümce olmasın, MUTLAKA seçilen tarih aralığındaki (${startDate} - ${endDate}) somut hava olaylarına değinsin: hangi günler yağmur var, hangi gün rüzgar en yüksek, hangi gün en uygun, varsa dikkat çekici bir uyarı (örn "7 Ağustos'ta %60 yağış ihtimali var, 8-9 Ağustos daha uygun görünüyor" gibi). En az 2, en fazla 3 cümle olsun. Bu kural TÜM aktiviteler için geçerli — sadece kamp değil, yüzme, yürüyüş, tırmanış, bisiklet için de aynı derinlikte, o aktiviteye özel somut gün bilgisi ver.
@@ -114,6 +116,31 @@ SADECE şu JSON formatında yanıt ver, başka hiçbir metin ekleme:
     const text = result.response.text()
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const parsed = JSON.parse(cleaned)
+
+    const STATUS_LABELS: Record<string, string> = {
+      good: 'Uygun',
+      warning: 'Dikkatli Git',
+      bad: 'Uygun Değil',
+    }
+
+    if (parsed.activities) {
+      for (const key of Object.keys(parsed.activities)) {
+        const activity = parsed.activities[key]
+        if (activity.status && STATUS_LABELS[activity.status]) {
+          activity.statusLabel = STATUS_LABELS[activity.status]
+        }
+      }
+    }
+
+    if (parsed.dailyWindows) {
+      for (const day of parsed.dailyWindows) {
+        for (const segment of day.segments || []) {
+          if (!['good', 'warning', 'bad'].includes(segment.color)) {
+            segment.color = 'warning'
+          }
+        }
+      }
+    }
 
     res.json(parsed)
   } catch (err: any) {
