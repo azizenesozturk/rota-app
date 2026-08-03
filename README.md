@@ -1,75 +1,86 @@
-# React + TypeScript + Vite
+# DenDen — Akıllı Hava ve Rota Tavsiyesi
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Konum, tarih ve aktivitene göre gerçek hava durumu ve yapay zeka destekli, kişiselleştirilmiş seyahat/kamp tavsiyesi veren web uygulaması.
 
-Currently, two official plugins are available:
+🔗 **Canlı demo:** [rota-app-alpha.vercel.app](https://rota-app-alpha.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Ne İşe Yarar?
 
-## React Compiler
+Gideceğin yeri, tarihi ve yapacağın aktiviteyi (kamp, yüzme, yürüyüş, dağ tırmanma, bisiklet, gezi) seçtiğinde:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- O gün/günler için gerçek hava durumu ve deniz/dalga verisini çeker
+- Yapay zekaya bu veriyi yorumlatıp **"git / dikkatli git / gitme"** şeklinde net bir tavsiye üretir
+- Aktiviteye özel pratik öneriler sunar (örn. "su geçirmez çadır kullan", "bugün suya girme")
+- Gün içindeki en uygun saat aralığını gösterir
+- Seçtiğin tarihten daha uygun bir gün varsa, veya yakında daha iyi bir yer varsa otomatik önerir
 
-## Expanding the ESLint configuration
+## Özellikler
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 🌤️ Gerçek zamanlı hava durumu ve deniz verisi ([Open-Meteo](https://open-meteo.com))
+- 🤖 Google Gemini ile üretilen, bağlama duyarlı tavsiyeler
+- 📅 Özel takvim bileşeni ile tarih aralığı seçimi
+- 🏖️ Aktivite bazlı değerlendirme (her aktivite kendi kriterlerine göre değerlendirilir)
+- 📍 Yakın yer önerisi (hava durumu karşılaştırmalı)
+- 📱 Mobil uyumlu, koyu tema arayüz
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Teknolojiler
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Backend:** Vercel Serverless Functions
+- **Yapay Zeka:** Google Gemini API
+- **Hava Durumu:** Open-Meteo API (ücretsiz, API anahtarı gerektirmez)
+- **Konum Arama:** Nominatim (OpenStreetMap)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Kurulum
 
+```bash
+# Bağımlılıkları kur
+npm install
+
+# .env dosyası oluştur ve Gemini API anahtarını ekle
+echo "GEMINI_API_KEY=senin_api_anahtarin" > .env
+
+# Geliştirme sunucusunu başlat
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Uygulama `http://localhost:5173` adresinde açılır.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Ortam Değişkenleri
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Değişken | Açıklama |
+|---|---|
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey)'dan alınan ücretsiz Gemini API anahtarı |
+
+## Proje Yapısı
 
 ```
+rota-app/
+├── src/
+│   ├── App.tsx          # Ana uygulama ve arayüz
+│   ├── Calendar.tsx      # Özel takvim bileşeni
+│   ├── weather.ts         # Hava durumu, geocoding ve AI istekleri
+│   └── index.css          # Renk paleti ve global stiller
+├── api/
+│   └── advice.ts          # Gemini AI ile tavsiye üreten serverless function
+└── public/
+    └── logo.png            # Uygulama logosu
+```
+
+## Yol Haritası
+
+- [ ] Rota kaydetme sistemiyle entegrasyon
+- [ ] Kullanıcı hesapları ve geçmiş sorgular
+- [ ] Bildirim/hatırlatma sistemi (kaydedilen rotalar için otomatik güncel tahmin)
+- [ ] Daha fazla aktivite tipi
+
+## Lisans
+
+Bu proje kişisel bir projedir.
+
+## Geliştirici
+
+**Aziz Enes Öztürk**
+
+- GitHub: [@azizenesozturk](https://github.com/azizenesozturk)
+- E-posta: ozturkazizenes@gmail.com
