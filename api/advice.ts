@@ -9,7 +9,12 @@ export default async function handler(req: any, res: any) {
     const { location, startDate, endDate, activities, weatherData } = req.body
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' })
+    const model = genAI.getGenerativeModel({
+  model: 'gemini-3.5-flash-lite',
+  generationConfig: {
+    thinkingConfig: { thinkingLevel: 'high' },
+  } as any,
+})
 
     const prompt = `
 Sen bir seyahat/kamp asistanısın. Aşağıdaki hava durumu verisine göre, seçilen aktiviteler için değerlendirme yap.
@@ -86,9 +91,11 @@ SADECE şu JSON formatında yanıt ver, başka hiçbir metin ekleme:
     }
   ]
 
-"tripSummary": {
+],
+
+  "tripSummary": {
     "comment": ["kısa cümle 1", "kısa cümle 2", "kısa cümle 3"]
-  }
+  },
 
   "betterPeriod": {
     "exists": true,
@@ -99,6 +106,7 @@ SADECE şu JSON formatında yanıt ver, başka hiçbir metin ekleme:
 
 "dailyWindows" alanı, seçilen tarih aralığındaki HER GÜN için ayrı bir obje içermeli (${startDate} ile ${endDate} arasındaki her tarih için bir tane). Her günün "segments" dizisi, o günü baştan sona (00:00-24:00) kesintisiz kaplayan 3-5 zaman dilimine bölünmeli. Her segment "color" olarak "good", "warning" veya "bad" olmalı. "reasons" dizisinde o segmentin neden o renkte olduğuna dair 2-3 kısa madde (3-5 kelime) olmalı. Saatlik hava verisini (hourly alanları) kullanarak gerçekçi geçişler belirle — örneğin öğleden sonra rüzgar artıyorsa, akşamüstü yağış riski varsa bunu segment sınırlarına yansıt.
 
+İKİ FARKLI GÜNÜN "reasons" METİNLERİ ASLA BİREBİR AYNI OLMAMALI — her günün kendi saatlik verisine (rüzgar, dalga, yağış) göre farklı, o güne özgü ifadeler kullan. Renk ile reasons metni tutarlı olmalı: örneğin "warning" bir segmentte reasons içinde neyin dikkat gerektirdiği açıkça yazmalı.
 }
 `
 
