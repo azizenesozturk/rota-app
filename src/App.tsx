@@ -670,12 +670,30 @@ const genericAssessments = weatherData
                     ))}
                   </div>
 
-                  <div className={`border rounded-lg p-3 flex items-center gap-3 ${a.status === 'bad' ? 'border-bad' : a.status === 'warning' ? 'border-warning' : 'border-good'}`}>
+                  <div className={`border rounded-lg p-3 mb-2 flex items-center gap-3 ${a.status === 'bad' ? 'border-bad' : a.status === 'warning' ? 'border-warning' : 'border-good'}`}>
                     <TriangleAlert size={28} className={`flex-shrink-0 ${a.status === 'bad' ? 'text-bad' : a.status === 'warning' ? 'text-warning' : 'text-good'}`} />
                     <div className="text-sm text-body flex flex-col gap-1">
                       {a.tips.map((tip: string, i: number) => <p key={i}>• {tip}</p>)}
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => setExpandedCard(expandedCard === a.id ? null : a.id)}
+                    className={`text-xs flex items-center gap-1 ${
+                      a.status === 'bad' ? 'text-bad' : a.status === 'warning' ? 'text-warning' : 'text-good'
+                    }`}
+                  >
+                    <ChevronDown size={14} className={`transition-transform ${expandedCard === a.id ? 'rotate-180' : ''}`} />
+                    tüm hazırlık listesi
+                  </button>
+
+                  {expandedCard === a.id && (
+                    <div className="mt-2 flex flex-col gap-1.5 text-sm text-body pl-1">
+                      {(a.detailedTips || []).map((tip: string, i: number) => (
+                        <p key={i}>• {tip}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
